@@ -19,19 +19,17 @@ router.post('/register', async(req, res) => {
         address
     } = req.body;
 
-    // Vérifier que tous les champs obligatoires sont fournis
     if (!email || !password || !role || !name) {
         return res.status(400).json({error: 'Tous les champs requis ne sont pas fournis.'});
     }
 
     try {
-        // Hash le mot de passe
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Insérer l'utilisateur dans la table "users"
+        // Insérer l'utilisateur dans la table 'users'
         const {
-            data,
-            error
+            data: userData,
+            error: userError
         } = await supabase
             .from('users')
             .insert([
@@ -46,15 +44,32 @@ router.post('/register', async(req, res) => {
             ])
             .select();
 
-        if (error) {
-            return res.status(400).json({error: error.message});
+        if (userError) {
+            return res.status(400).json({error: userError.message});
         }
 
-        res.status(201)
-           .json({
-               message: 'Utilisateur créé avec succès',
-               user: data[0]
-           });
+        // // Si le rôle est 'tattoo_artist', ajouter une entrée dans la table 'TattooArtists'
+        // if (role === 'tattoo_artist') {
+        //     const userId = userData[0].id;
+        //
+        //     const {error: tattooArtistError} = await supabase
+        //         .from('TattooArtists')
+        //         .insert([
+        //             {
+        //                 user_id: userId,
+        //                 name: name
+        //             }
+        //         ]);
+        //
+        //     if (tattooArtistError) {
+        //         return res.status(400).json({error: tattooArtistError.message});
+        //     }
+        // }
+
+        res.status(201).json({
+            message: 'Utilisateur créé avec succès',
+            user: userData[0]
+        });
     } catch (error) {
         res.status(500).json({error: 'Erreur serveur.'});
     }
@@ -67,13 +82,11 @@ router.post('/login', async(req, res) => {
         password
     } = req.body;
 
-    // Vérifier que les champs sont remplis
     if (!email || !password) {
         return res.status(400).json({error: 'Email et mot de passe sont requis.'});
     }
 
     try {
-        // Chercher l'utilisateur par email
         const {
             data: users,
             error
@@ -87,19 +100,19 @@ router.post('/login', async(req, res) => {
         }
 
         const user = users[0];
-
-        // Comparer le mot de passe fourni avec le hash stocké
         const isMatch = await bcrypt.compare(password, user.password);
+
         if (!isMatch) {
             return res.status(400).json({error: 'Mot de passe incorrect.'});
         }
 
-        // Créer un token JWT
         const token = jwt.sign({
             id: user.id,
             email: user.email,
             role: user.role
-        }, process.env.JWT_SECRET, {expiresIn: '1h'});
+        }, process.env.JWT_SECRET, {
+            expiresIn: '1h'
+        });
 
         res.status(200)
            .json({
