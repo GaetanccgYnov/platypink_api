@@ -7,6 +7,7 @@ require('dotenv').config();
 const {createClient} = require('@supabase/supabase-js');
 const authRoutes = require('./routes/auth');
 const tattooArtistRoutes = require('./routes/tattooArtist');
+const commonRoutes = require('./routes/common');
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -49,6 +50,7 @@ supabase
 // Utiliser les routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tattoo-artist', tattooArtistRoutes);
+app.use('/api', commonRoutes);
 
 // Route de test
 app.get('/', (req, res) => {
