@@ -8,6 +8,7 @@ const {createClient} = require('@supabase/supabase-js');
 const authRoutes = require('./routes/auth');
 const tattooArtistRoutes = require('./routes/tattooArtist');
 const commonRoutes = require('./routes/common');
+const clientRoutes = require('./routes/client');
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -51,6 +52,7 @@ supabase
 app.use('/api/auth', authRoutes);
 app.use('/api/tattoo-artist', tattooArtistRoutes);
 app.use('/api', commonRoutes);
+app.use('/api/client', clientRoutes);
 
 // Route de test
 app.get('/', (req, res) => {

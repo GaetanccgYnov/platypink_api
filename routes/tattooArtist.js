@@ -11,7 +11,7 @@ const {createClient} = require('@supabase/supabase-js');
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
 // Créer un flash tattoo
-router.post('/add-flash', verifyToken, verifyRole(['tattoo_artist']), async(req, res) => {
+router.post('/flashes', verifyToken, verifyRole(['tattoo_artist']), async(req, res) => {
     const {
         title,
         description,
@@ -59,7 +59,7 @@ router.post('/add-flash', verifyToken, verifyRole(['tattoo_artist']), async(req,
 });
 
 // Modifier un flash tattoo
-router.put('/manage-flash/:flashId', verifyToken, verifyRole(['tattoo_artist']), async(req, res) => {
+router.put('/flashes/:flashId', verifyToken, verifyRole(['tattoo_artist']), async(req, res) => {
     const {flashId} = req.params;
     const {
         title,
@@ -97,7 +97,7 @@ router.put('/manage-flash/:flashId', verifyToken, verifyRole(['tattoo_artist']),
 });
 
 // Supprimer un flash tattoo
-router.delete('/manage-flash/:flashId', verifyToken, verifyRole(['tattoo_artist']), async(req, res) => {
+router.delete('/flashes/:flashId', verifyToken, verifyRole(['tattoo_artist']), async(req, res) => {
     const {flashId} = req.params;
 
     try {

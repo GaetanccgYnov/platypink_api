@@ -7,7 +7,7 @@ const {createClient} = require('@supabase/supabase-js');
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
 // Récupérer un flash tattoo par son ID
-router.get('/flash/:flashId', async(req, res) => {
+router.get('/flashes/:flashId', async(req, res) => {
     const {flashId} = req.params;
 
     try {
@@ -49,5 +49,6 @@ router.get('/flashes', async(req, res) => {
         res.status(500).json({error: 'Erreur serveur lors de la récupération des flash tattoos.'});
     }
 });
+
 
 module.exports = router;

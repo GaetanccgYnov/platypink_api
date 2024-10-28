@@ -1,5 +1,4 @@
-// client.js (the classic user)
-
+// client.js
 const express = require('express');
 const router = express.Router();
 const {
@@ -10,114 +9,310 @@ const {createClient} = require('@supabase/supabase-js');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
-// Créer un flash tattoo
-router.post('/add-flash', verifyToken, verifyRole(['tattoo_artist']), async(req, res) => {
-    const {
-        title,
-        description,
-        image_url,
-        price
-    } = req.body;
-
-    const user_id = req.user.id; // ID de l'utilisateur connecté
-
-    // Validation des entrées
-    if (!user_id || !title || !price) {
-        return res.status(400).json({error: 'Les champs user_id, title et price sont obligatoires.'});
-    }
+// Consulter le profil client
+router.get('/profile', verifyToken, verifyRole(['client']), async(req, res) => {
+    const user_id = req.user.id;
 
     try {
         const {
             data,
             error
         } = await supabase
-            .from('flashtattoos')
+            .from('users')
+            .select('*')
+            .eq('id', user_id)
+            .single();
+
+        if (error) {
+            return res.status(404).json({error: 'Profil client non trouvé.'});
+        }
+        res.status(200).json(data);
+    } catch (error) {
+        res.status(500).json({error: 'Erreur serveur lors de la récupération du profil client.'});
+    }
+});
+
+// Mettre à jour le profil client
+router.put('/profile', verifyToken, verifyRole(['client']), async(req, res) => {
+    const user_id = req.user.id;
+    const {
+        name,
+        address,
+        phone,
+        image
+    } = req.body;
+
+    try {
+        const {
+            data,
+            error
+        } = await supabase
+            .from('users')
+            .update({
+                name,
+                address,
+                phone,
+                image
+            })
+            .eq('id', user_id)
+            .select();
+
+        if (error) {
+            return res.status(400).json({error: error.message});
+        }
+        res.status(200)
+           .json({
+               message: 'Profil client mis à jour avec succès',
+               client: data[0]
+           });
+    } catch (error) {
+        res.status(500).json({error: 'Erreur serveur lors de la mise à jour du profil client.'});
+    }
+});
+
+// Supprimer le profil client
+router.delete('/profile', verifyToken, verifyRole(['client']), async(req, res) => {
+    const user_id = req.user.id;
+
+    try {
+        const {error} = await supabase
+            .from('users')
+            .delete()
+            .eq('id', user_id);
+
+        if (error) {
+            return res.status(400).json({error: error.message});
+        }
+        res.status(200).json({message: 'Profil client supprimé avec succès'});
+    } catch (error) {
+        res.status(500).json({error: 'Erreur serveur lors de la suppression du profil client.'});
+    }
+});
+
+// Poster un avis
+router.post('/reviews', verifyToken, verifyRole(['client']), async(req, res) => {
+    const {
+        tattoo_artist_id,
+        rating,
+        comment
+    } = req.body;
+    const client_id = req.user.id;
+
+    try {
+        const {
+            data,
+            error
+        } = await supabase
+            .from('reviews')
             .insert([
                 {
-                    user_id,
-                    title,
-                    description,
-                    image_url,
-                    price
+                    client_id,
+                    tattoo_artist_id,
+                    rating,
+                    comment
                 }
             ])
             .select();
 
         if (error) {
-            console.error('Erreur de Supabase:', error.message);
+            return res.status(400).json({error: error.message});
+        }
+        res.status(201).json({
+            message: 'Avis posté avec succès',
+            review: data[0]
+        });
+    } catch (error) {
+        res.status(500).json({error: 'Erreur serveur lors de la publication de l\'avis.'});
+    }
+});
+
+// Consulter les avis
+router.get('/reviews', verifyToken, verifyRole(['client']), async(req, res) => {
+    const user_id = req.user.id;
+
+    try {
+        const {
+            data,
+            error
+        } = await supabase
+            .from('reviews')
+            .select('*')
+            .eq('client_id', user_id);
+
+        if (error) {
+            return res.status(400).json({error: error.message});
+        }
+        res.status(200).json(data);
+    } catch (error) {
+        res.status(500).json({error: 'Erreur serveur lors de la récupération des avis.'});
+    }
+});
+
+// Supprimer un avis
+router.delete('/reviews/:reviewId', verifyToken, verifyRole(['client']), async(req, res) => {
+    const {reviewId} = req.params;
+
+    try {
+        const {
+            data,
+            error
+        } = await supabase
+            .from('reviews')
+            .delete()
+            .eq('id', reviewId)
+            .select();
+
+        if (error) {
+            return res.status(400).json({error: error.message});
+        }
+        res.status(200).json({message: 'Avis supprimé avec succès'});
+    } catch (error) {
+        res.status(500).json({error: 'Erreur serveur lors de la suppression de l\'avis.'});
+    }
+});
+
+
+// Afficher les favoris
+router.get('/favorites', verifyToken, verifyRole(['client']), async(req, res) => {
+    const user_id = req.user.id;
+
+    try {
+        const {
+            data,
+            error
+        } = await supabase
+            .from('favorites')
+            .select('*')
+            .eq('client_id', user_id);
+
+        if (error) {
+            return res.status(400).json({error: error.message});
+        }
+        res.status(201).json({
+            message: 'Tous mes favoris',
+            favorite: data[0]
+        });
+    } catch (error) {
+        res.status(500).json({error: 'Erreur serveur lors de la récupération des favoris.'});
+    }
+});
+
+// Ajouter aux favoris
+router.post('/favorites', verifyToken, verifyRole(['client']), async(req, res) => {
+    const {
+        tattoo_artist_id,
+        flash_tattoo_id
+    } = req.body;
+    const client_id = req.user.id;
+
+    try {
+        const {
+            data,
+            error
+        } = await supabase
+            .from('favorites')
+            .insert([
+                {
+                    client_id,
+                    tattoo_artist_id,
+                    flash_tattoo_id
+                }
+            ])
+            .select();
+
+        if (error) {
+            return res.status(400).json({error: error.message});
+        }
+        res.status(201).json({
+            message: 'Tatoueur ajouté aux favoris',
+            favorite: data[0]
+        });
+    } catch (error) {
+        res.status(500).json({error: 'Erreur serveur lors de l\'ajout aux favoris.'});
+    }
+});
+
+// Supprimer des favoris
+router.delete('/favorites/:favoriteId', verifyToken, verifyRole(['client']), async(req, res) => {
+    const {favoriteId} = req.params;
+
+    try {
+        const {
+            data,
+            error
+        } = await supabase
+            .from('favorites')
+            .delete()
+            .eq('id', favoriteId)
+            .select();
+
+        if (error) {
+            return res.status(400).json({error: error.message});
+        }
+        res.status(200).json({message: 'Favori supprimé avec succès'});
+    } catch (error) {
+        res.status(500).json({error: 'Erreur serveur lors de la suppression du favori.'});
+    }
+});
+
+// Consulter les rendez-vous
+router.get('/reservations', verifyToken, verifyRole(['client']), async(req, res) => {
+    const user_id = req.user.id;
+
+    try {
+        const {
+            data,
+            error
+        } = await supabase
+            .from('bookings')
+            .select('*')
+            .eq('user_id', user_id);
+
+        if (error) {
+            return res.status(400).json({error: error.message});
+        }
+        res.status(200).json(data);
+    } catch (error) {
+        res.status(500).json({error: 'Erreur serveur lors de la récupération des rendez-vous.'});
+    }
+});
+
+// Envoyer une demande de réservation
+router.post('/reservations', verifyToken, verifyRole(['client']), async(req, res) => {
+    const {
+        tattoo_artist_id,
+        date
+    } = req.body;
+    const client_id = req.user.id;
+
+    try {
+        const {
+            data,
+            error
+        } = await supabase
+            .from('bookings')
+            .insert([
+                {
+                    client_id,
+                    tattoo_artist_id,
+                    date,
+                    status: 'pending'
+                }
+            ])
+            .select();
+
+        if (error) {
             return res.status(400).json({error: error.message});
         }
 
         res.status(201).json({
-            message: 'Flash tattoo créé avec succès',
-            flashTattoo: data[0]
+            message: 'Demande de réservation envoyée',
+            appointment: data[0]
         });
     } catch (error) {
-        console.error('Erreur serveur:', error);
-        res.status(500).json({error: 'Erreur serveur lors de la création du flash tattoo.'});
+        res.status(500).json({error: 'Erreur serveur lors de la création de la réservation.'});
     }
 });
 
-// Modifier un flash tattoo
-router.put('/manage-flash/:flashId', verifyToken, verifyRole(['tattoo_artist']), async(req, res) => {
-    const {flashId} = req.params;
-    const {
-        title,
-        description,
-        price,
-        image_url
-    } = req.body;
-
-    try {
-        const {
-            data,
-            error
-        } = await supabase
-            .from('flashtattoos')
-            .update({
-                title,
-                description,
-                price,
-                image_url
-            })
-            .eq('id', flashId)
-            .select();
-
-        if (error) {
-            return res.status(400).json({error: error.message});
-        }
-
-        res.status(200).json({
-            message: 'Flash tattoo modifié avec succès',
-            flash: data[0]
-        });
-    } catch (error) {
-        res.status(500).json({error: 'Erreur serveur lors de la modification du flash tattoo.'});
-    }
-});
-
-// Supprimer un flash tattoo
-router.delete('/manage-flash/:flashId', verifyToken, verifyRole(['tattoo_artist']), async(req, res) => {
-    const {flashId} = req.params;
-
-    try {
-        const {
-            data,
-            error
-        } = await supabase
-            .from('flashtattoos')
-            .delete()
-            .eq('id', flashId)
-            .select();
-
-        if (error) {
-            return res.status(400).json({error: error.message});
-        }
-
-        res.status(200).json({message: 'Flash tattoo supprimé avec succès'});
-    } catch (error) {
-        res.status(500).json({error: 'Erreur serveur lors de la suppression du flash tattoo.'});
-    }
-});
 
 module.exports = router;

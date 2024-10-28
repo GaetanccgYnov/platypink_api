@@ -48,24 +48,6 @@ router.post('/register', async(req, res) => {
             return res.status(400).json({error: userError.message});
         }
 
-        // // Si le rôle est 'tattoo_artist', ajouter une entrée dans la table 'TattooArtists'
-        // if (role === 'tattoo_artist') {
-        //     const userId = userData[0].id;
-        //
-        //     const {error: tattooArtistError} = await supabase
-        //         .from('TattooArtists')
-        //         .insert([
-        //             {
-        //                 user_id: userId,
-        //                 name: name
-        //             }
-        //         ]);
-        //
-        //     if (tattooArtistError) {
-        //         return res.status(400).json({error: tattooArtistError.message});
-        //     }
-        // }
-
         res.status(201).json({
             message: 'Utilisateur créé avec succès',
             user: userData[0]
