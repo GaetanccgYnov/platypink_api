@@ -5,12 +5,13 @@ const cors = require('cors');
 const morgan = require('morgan');
 require('dotenv').config();
 const {createClient} = require('@supabase/supabase-js');
-const authRoutes = require('./routes/auth');
-const tattooArtistRoutes = require('./routes/tattooArtist');
-const commonRoutes = require('./routes/common');
-const clientRoutes = require('./routes/client');
 const app = express();
 const port = process.env.PORT || 5000;
+const authRoutes = require('./routes/auth');
+const shopRoutes = require('./routes/shops');
+const flashTattooRoutes = require('./routes/flashTattoos');
+const bookingRoutes = require('./routes/bookings');
+const userRoutes = require('./routes/users');
 
 // Middlewares
 app.use(cors());
@@ -33,26 +34,14 @@ supabase.from('users')
                 console.log('Connexion réussie à Supabase:', data);
             }
         });
-supabase
-    .from('flashtattoos')
-    .select('*')
-    .limit(1)
-    .then(({
-               data,
-               error
-           }) => {
-        if (error) {
-            console.error('Erreur lors de la connexion à Supabase :', error.message);
-        } else {
-            console.log('Connexion réussie, données de test:', data);
-        }
-    });
 
 // Utiliser les routes
-app.use('/api/auth', authRoutes);
-app.use('/api/tattoo-artist', tattooArtistRoutes);
-app.use('/api', commonRoutes);
-app.use('/api/client', clientRoutes);
+app.use('/auth', authRoutes);
+app.use('/shops', shopRoutes);
+app.use('/flash-tattoos', flashTattooRoutes);
+app.use('/bookings', bookingRoutes);
+app.use('/users', userRoutes);
+
 
 // Route de test
 app.get('/', (req, res) => {
