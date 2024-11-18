@@ -1,23 +1,22 @@
-Pour tester les modifications d’utilisateurs via Postman, il vous faudra plusieurs éléments :
-
-1. **Créer des collections et des requêtes dans Postman** pour chaque endpoint (connexion, inscription, mise à jour du profil).
-2. **Configurer les en-têtes d’autorisation** pour chaque requête nécessitant un token.
-3. **Envoyer des requêtes avec des exemples de données** pour vérifier les réponses de l'API.
+Voici une version complète de votre documentation Postman, incluant les fonctionnalités récemment ajoutées comme la gestion des tatouages, des réservations, et des favoris.
 
 ---
 
 ### Étapes pour tester avec Postman
 
-#### 1. Créer les collections et les requêtes
+#### 1. Configurer une collection dans Postman
 
-Créez une collection dans Postman, par exemple nommée **"API Platyp’ink"**. Ajoutez-y les requêtes suivantes :
+Créez une collection appelée **"API Platyp’ink"** et ajoutez-y les requêtes suivantes :
 
-##### a. Inscription d’un utilisateur (POST `/auth/register`)
+---
+
+### **Utilisateurs**
+
+#### a. Inscription d’un utilisateur (POST `/auth/register`)
 
 1. **Méthode** : POST
 2. **URL** : `http://localhost:5000/auth/register`
-3. **Body** : Choisissez `raw` et `JSON`, puis entrez les informations d’inscription :
-
+3. **Body** :
    ```json
    {
        "email": "user@example.com",
@@ -29,16 +28,13 @@ Créez une collection dans Postman, par exemple nommée **"API Platyp’ink"**. 
    }
    ```
 
-4. **Envoyer la requête** : Si tout fonctionne, vous devriez recevoir une réponse avec l’utilisateur créé.
-
 ---
 
-##### b. Connexion d’un utilisateur (POST `/auth/login`)
+#### b. Connexion d’un utilisateur (POST `/auth/login`)
 
 1. **Méthode** : POST
 2. **URL** : `http://localhost:5000/auth/login`
-3. **Body** : Choisissez `raw` et `JSON`, puis entrez les informations de connexion :
-
+3. **Body** :
    ```json
    {
        "email": "user@example.com",
@@ -46,71 +42,135 @@ Créez une collection dans Postman, par exemple nommée **"API Platyp’ink"**. 
    }
    ```
 
-4. **Envoyer la requête** : Vous recevrez un `token` de connexion si les informations sont correctes. Sauvegardez ce token, car vous en aurez besoin pour les autres requêtes.
-
 ---
 
-#### 2. Tester les modifications de profil utilisateur
-
-##### a. Mise à jour des informations de l’utilisateur connecté (PUT `/users/me`)
+#### c. Mise à jour des informations utilisateur (PUT `/users/me`)
 
 1. **Méthode** : PUT
 2. **URL** : `http://localhost:5000/users/me`
 3. **Headers** :
-    - Ajoutez un header `Authorization` avec la valeur `Bearer <votre_token>`.
-4. **Body** : Choisissez `raw` et `JSON`, puis entrez les nouvelles informations à mettre à jour (par exemple) :
-
+    - `Authorization: Bearer <votre_token>`
+4. **Body** :
    ```json
    {
-       "name": "John Updated",
-       "phone_number": "0987654321",
-       "description": "Tattoo enthusiast",
+       "name": "Updated Name",
+       "phone_number": "9876543210",
+       "description": "Updated description",
        "password": "NewPassword123!"
    }
    ```
 
-5. **Envoyer la requête** : Vous devriez recevoir une réponse confirmant la mise à jour des informations.
-
 ---
 
-##### b. Mise à jour des informations d’un autre utilisateur (PUT `/users/:id`)
+### **Gestion des tatouages**
 
-> **Note** : Cette requête nécessite que l’utilisateur soit un **administrateur**.
+#### a. Ajouter un tatouage (POST `/tattoos`)
 
-1. **Méthode** : PUT
-2. **URL** : `http://localhost:5000/users/<id_utilisateur>`
+1. **Méthode** : POST
+2. **URL** : `http://localhost:5000/tattoos`
 3. **Headers** :
-    - Ajoutez un header `Authorization` avec la valeur `Bearer <votre_token_admin>`.
-4. **Body** : Choisissez `raw` et `JSON`, puis entrez les informations à modifier :
-
+    - `Authorization: Bearer <votre_token_tattoo_artist>`
+4. **Body** :
    ```json
    {
-       "name": "User Updated by Admin",
-       "role": "tattoo_artist",
-       "address": "456 New St, New City"
+       "title": "Dragon Tattoo",
+       "description": "A detailed dragon tattoo.",
+       "price": 120.00,
+       "color": true,
+       "size": "grand",
+       "image_url": "https://example.com/tattoo.jpg"
    }
    ```
 
-5. **Envoyer la requête** : Si les permissions et le token sont corrects, vous recevrez une réponse confirmant la mise à jour de cet utilisateur.
+---
+
+#### b. Supprimer un tatouage (DELETE `/tattoos/:id`)
+
+1. **Méthode** : DELETE
+2. **URL** : `http://localhost:5000/tattoos/<id_tattoo>`
+3. **Headers** :
+    - `Authorization: Bearer <votre_token_tattoo_artist>`
 
 ---
 
-#### 3. Tester d'autres scénarios
+### **Réservations**
 
-Voici quelques cas que vous pouvez également tester :
+#### a. Ajouter une réservation (POST `/bookings`)
 
-- **Token invalide** : Essayez d’envoyer une requête avec un token incorrect ou expiré pour voir si l’API répond avec une erreur d’autorisation.
-- **Rôles non autorisés** : Essayez d'accéder à la route `/users/:id` avec un utilisateur qui n’est pas admin pour vérifier si l’API renvoie bien une erreur de permission.
-- **Champs manquants** : Enlevez un champ requis (comme `name` ou `role`) et vérifiez si l’API retourne un message d’erreur approprié.
+1. **Méthode** : POST
+2. **URL** : `http://localhost:5000/bookings`
+3. **Headers** :
+    - `Authorization: Bearer <votre_token_client>`
+4. **Body** :
+   ```json
+   {
+       "flash_tattoo_id": 1,
+       "tattoo_artist_id": "uuid-artist",
+       "date": "2024-11-15",
+       "time": "14:30",
+       "status": "pending"
+   }
+   ```
 
 ---
 
-### Résumé des requêtes dans Postman
+#### b. Voir les réservations d’un artiste (GET `/bookings/artist`)
 
-| Méthode | URL              | Description                                | Headers                       | Body                       |
-|---------|------------------|--------------------------------------------|-------------------------------|----------------------------|
-| POST    | `/auth/register` | Inscription d’un nouvel utilisateur        | Aucun                         | Informations d'inscription |
-| POST    | `/auth/login`    | Connexion de l’utilisateur                 | Aucun                         | Email et mot de passe      |
-| PUT     | `/users/me`      | Mise à jour des infos utilisateur connecté | Authorization: Bearer <token> | Nouvelles informations     |
-| PUT     | `/users/:id`     | Mise à jour d’un utilisateur (Admin)       | Authorization: Bearer <token> | Informations utilisateur   |
+1. **Méthode** : GET
+2. **URL** : `http://localhost:5000/bookings/artist`
+3. **Headers** :
+    - `Authorization: Bearer <votre_token_tattoo_artist>`
 
+---
+
+### **Favoris**
+
+#### a. Ajouter un favori (POST `/favorites`)
+
+1. **Méthode** : POST
+2. **URL** : `http://localhost:5000/favorites`
+3. **Headers** :
+    - `Authorization: Bearer <votre_token_client>`
+4. **Body** :
+   ```json
+   {
+       "tattoo_artist_id": "uuid-artist"
+   }
+   ```
+
+---
+
+#### b. Récupérer les favoris (GET `/favorites`)
+
+1. **Méthode** : GET
+2. **URL** : `http://localhost:5000/favorites`
+3. **Headers** :
+    - `Authorization: Bearer <votre_token_client>`
+
+---
+
+### Résumé des scénarios à tester
+
+| Fonctionnalité       | Méthode | URL              | Description                             | Headers                       | Body                        |
+|----------------------|---------|------------------|-----------------------------------------|-------------------------------|-----------------------------|
+| Inscription          | POST    | `/auth/register` | Créer un nouvel utilisateur             | Aucun                         | Informations utilisateur    |
+| Connexion            | POST    | `/auth/login`    | Obtenir un token de connexion           | Aucun                         | Email et mot de passe       |
+| Mise à jour profil   | PUT     | `/users/me`      | Modifier les infos utilisateur connecté | Authorization: Bearer <token> | Nouvelles infos utilisateur |
+| Ajouter un tatouage  | POST    | `/tattoos`       | Créer un nouveau tatouage               | Authorization: Bearer <token> | Infos tatouage              |
+| Réserver un tatouage | POST    | `/bookings`      | Réserver un tatouage                    | Authorization: Bearer <token> | Infos réservation           |
+| Ajouter un favori    | POST    | `/favorites`     | Ajouter un élément aux favoris          | Authorization: Bearer <token> | Infos favori                |
+
+---
+
+### Notes importantes
+
+1. **Gestion des tokens** :
+    - Sauvegardez les tokens obtenus après la connexion dans les variables d’environnement Postman pour faciliter leur utilisation dans d’autres requêtes.
+
+2. **Erreurs et validations** :
+    - Testez les cas où les informations requises sont manquantes ou incorrectes (par exemple, un `flash_tattoo_id` inexistant).
+
+3. **Vérifications des permissions** :
+    - Testez chaque endpoint avec différents rôles (`client`, `tattoo_artist`, `admin`) pour vous assurer que seuls les utilisateurs autorisés peuvent effectuer des actions spécifiques.
+
+---
