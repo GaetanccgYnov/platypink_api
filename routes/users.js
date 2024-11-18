@@ -11,6 +11,28 @@ const bcrypt = require('bcryptjs');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
+router.get('/me', verifyToken, async(req, res) => {
+    const user_id = req.user.id;
+
+    try {
+        const {
+            data,
+            error
+        } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', user_id)
+            .single();
+
+        if (error) {
+            return res.status(404).json({error: 'Profil utilisateur non trouvé.'});
+        }
+        res.status(200).json(data);
+    } catch (error) {
+        res.status(500).json({error: 'Erreur serveur lors de la récupération du profil utilisateur.'});
+    }
+});
+
 // Endpoint pour que les utilisateurs mettent à jour leurs informations personnelles
 router.put('/me', verifyToken, async(req, res) => {
     const {
@@ -63,6 +85,35 @@ router.put('/me', verifyToken, async(req, res) => {
            });
     } catch (error) {
         res.status(500).json({error: 'Erreur serveur.'});
+    }
+});
+
+// Récupérer la liste des utilisateurs (Admin uniquement)
+router.get('/', verifyToken, verifyRole(['admin']), async(req, res) => {
+    const {
+        role,
+        name,
+        email
+    } = req.query; // Optionnel : filtres
+    let query = supabase.from('users').select('*');
+
+    // Appliquer les filtres si présents
+    if (role) query = query.eq('role', role);
+    if (name) query = query.ilike('name', `%${name}%`);
+    if (email) query = query.ilike('email', `%${email}%`);
+
+    try {
+        const {
+            data,
+            error
+        } = await query;
+
+        if (error) {
+            return res.status(400).json({error: error.message});
+        }
+        res.status(200).json(data);
+    } catch (error) {
+        res.status(500).json({error: 'Erreur serveur lors de la récupération des utilisateurs.'});
     }
 });
 
@@ -120,6 +171,25 @@ router.put('/:id', verifyToken, verifyRole(['admin']), async(req, res) => {
            });
     } catch (error) {
         res.status(500).json({error: 'Erreur serveur.'});
+    }
+});
+
+// Supprimer un utilisateur (Admin uniquement)
+router.delete('/:id', verifyToken, verifyRole(['admin']), async(req, res) => {
+    const {id} = req.params;
+
+    try {
+        const {
+            data,
+            error
+        } = await supabase
+            .from('users')
+            .delete()
+            .eq('id', id);
+
+        res.status(200).json({message: 'Utilisateur supprimé avec succès'});
+    } catch (error) {
+        res.status(500).json({error: 'Erreur serveur lors de la suppression de l\'utilisateur.'});
     }
 });
 
