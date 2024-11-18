@@ -11,7 +11,8 @@ const authRoutes = require('./routes/auth');
 const shopRoutes = require('./routes/shops');
 const bookingRoutes = require('./routes/bookings');
 const userRoutes = require('./routes/users');
-const tattoosRoutes = require('./routes/tattoos');
+const tattooRoutes = require('./routes/tattoos');
+const favoriteRoutes = require('./routes/favorites');
 
 // Middlewares
 app.use(cors());
@@ -40,7 +41,8 @@ app.use('/auth', authRoutes);
 app.use('/shops', shopRoutes);
 app.use('/bookings', bookingRoutes);
 app.use('/users', userRoutes);
-app.use('/tattoos', tattoosRoutes);
+app.use('/tattoos', tattooRoutes);
+app.use('/favorites', favoriteRoutes);
 
 
 // Route de test

@@ -213,10 +213,6 @@ router.delete('/:id', verifyToken, verifyRole([
 
         if (error) return res.status(400).json({error: error.message});
 
-        if (!data || data.length === 0) {
-            return res.status(404).json({error: 'Réservation non trouvée.'});
-        }
-
         res.status(200).json({message: 'Réservation supprimée avec succès.'});
     } catch (err) {
         console.error('Erreur serveur lors de la suppression de la réservation :', err);
