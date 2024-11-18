@@ -9,9 +9,9 @@ const app = express();
 const port = process.env.PORT || 5000;
 const authRoutes = require('./routes/auth');
 const shopRoutes = require('./routes/shops');
-const flashTattooRoutes = require('./routes/flashTattoos');
 const bookingRoutes = require('./routes/bookings');
 const userRoutes = require('./routes/users');
+const tattoosRoutes = require('./routes/tattoos');
 
 // Middlewares
 app.use(cors());
@@ -38,9 +38,9 @@ supabase.from('users')
 // Utiliser les routes
 app.use('/auth', authRoutes);
 app.use('/shops', shopRoutes);
-app.use('/flash-tattoos', flashTattooRoutes);
 app.use('/bookings', bookingRoutes);
 app.use('/users', userRoutes);
+app.use('/tattoos', tattoosRoutes);
 
 
 // Route de test
