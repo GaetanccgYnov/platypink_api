@@ -88,19 +88,9 @@ router.put('/me', verifyToken, async(req, res) => {
     }
 });
 
-// Récupérer la liste des utilisateurs (Admin uniquement)
-router.get('/', verifyToken, verifyRole(['admin']), async(req, res) => {
-    const {
-        role,
-        name,
-        email
-    } = req.query; // Optionnel : filtres
-    let query = supabase.from('users').select('*');
-
-    // Appliquer les filtres si présents
-    if (role) query = query.eq('role', role);
-    if (name) query = query.ilike('name', `%${name}%`);
-    if (email) query = query.ilike('email', `%${email}%`);
+// Récupérer la liste des tattoo_artists
+router.get('/', async(req, res) => {
+    let query = supabase.from('users').select('*').eq('role', 'tattoo_artist');
 
     try {
         const {
