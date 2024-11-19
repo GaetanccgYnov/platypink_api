@@ -13,6 +13,8 @@ const bookingRoutes = require('./routes/bookings');
 const userRoutes = require('./routes/users');
 const tattooRoutes = require('./routes/tattoos');
 const favoriteRoutes = require('./routes/favorites');
+const reviewRoutes = require('./routes/reviews');
+const adminRoutes = require('./routes/admin');
 
 // Middlewares
 app.use(cors());
@@ -43,6 +45,8 @@ app.use('/bookings', bookingRoutes);
 app.use('/users', userRoutes);
 app.use('/tattoos', tattooRoutes);
 app.use('/favorites', favoriteRoutes);
+app.use('/reviews', reviewRoutes);
+app.use('/admin', adminRoutes);
 
 
 // Route de test
