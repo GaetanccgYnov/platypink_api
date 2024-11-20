@@ -9,12 +9,24 @@ const {createClient} = require('@supabase/supabase-js');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
+const multer = require('multer');
+const path = require('path');
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, path.join(__dirname, '../public/uploads'));
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`);
+    }
+});
+const upload = multer({storage});
+
 // CREATE - Ajouter un nouveau flash tattoo
-router.post('/', verifyToken, verifyRole(['tattoo_artist']), async(req, res) => {
+router.post('/', verifyToken, verifyRole(['tattoo_artist']), upload.single('image'), async(req, res) => {
     const {
         title,
         description,
-        image_url,
         price,
         color,
         size,
@@ -33,6 +45,7 @@ router.post('/', verifyToken, verifyRole(['tattoo_artist']), async(req, res) => 
         return res.status(400).json({error: 'La taille doit être "petit", "moyen" ou "grand".'});
     }
 
+    const image_url = req.file ? `/uploads/${req.file.filename}` : null;
     try {
         const {
             data,
@@ -55,14 +68,16 @@ router.post('/', verifyToken, verifyRole(['tattoo_artist']), async(req, res) => 
 
         if (error) return res.status(400).json({error: error.message});
 
-        res.status(201).json({
-            message: 'Flash tattoo créé avec succès',
-            tattoo: data[0]
-        });
+        res.status(201)
+           .json({
+               message: 'Flash tattoo créé avec succès',
+               tattoo: data[0]
+           });
     } catch (error) {
         res.status(500).json({error: 'Erreur serveur lors de la création du flash tattoo.'});
     }
 });
+
 
 router.get('/', optionalVerifyToken, async(req, res) => {
     const {
@@ -186,13 +201,11 @@ router.get('/:id/favorite', verifyToken, async(req, res) => {
     }
 });
 
-// UPDATE - Mettre à jour un flash tattoo
-router.put('/:id', verifyToken, verifyRole(['tattoo_artist']), async(req, res) => {
+router.put('/:id', verifyToken, verifyRole(['tattoo_artist']), upload.single('image'), async(req, res) => {
     const {id} = req.params;
     const {
         title,
         description,
-        image_url,
         price,
         color,
         size,
@@ -210,13 +223,38 @@ router.put('/:id', verifyToken, verifyRole(['tattoo_artist']), async(req, res) =
     const updates = {};
     if (title) updates.title = title;
     if (description) updates.description = description;
-    if (image_url) updates.image_url = image_url;
     if (price) updates.price = price;
     if (color !== undefined) updates.color = color;
     if (size) updates.size = size;
     if (available !== undefined) updates.available = available;
 
+    if (req.file) {
+        updates.image_url = `/uploads/${req.file.filename}`;
+    }
+
     try {
+        const {
+            data: existingTattoo,
+            error: fetchError
+        } = await supabase
+            .from('flashtattoos')
+            .select('image_url')
+            .eq('id', id)
+            .eq('user_id', req.user.id)
+            .single();
+
+        if (fetchError || !existingTattoo) {
+            return res.status(404).json({error: 'Flash tattoo non trouvé ou non autorisé.'});
+        }
+
+        if (updates.image_url && existingTattoo.image_url) {
+            // Supprimer l'ancienne image
+            const oldImagePath = path.join(__dirname, '../public', existingTattoo.image_url);
+            fs.unlink(oldImagePath, (err) => {
+                if (err) console.error('Erreur lors de la suppression de l\'ancienne image :', err);
+            });
+        }
+
         const {
             data,
             error
@@ -229,14 +267,11 @@ router.put('/:id', verifyToken, verifyRole(['tattoo_artist']), async(req, res) =
 
         if (error) return res.status(400).json({error: error.message});
 
-        if (!data || data.length === 0) {
-            return res.status(404).json({error: 'Flash tattoo non trouvé ou non autorisé.'});
-        }
-
-        res.status(200).json({
-            message: 'Flash tattoo mis à jour avec succès',
-            tattoo: data[0]
-        });
+        res.status(200)
+           .json({
+               message: 'Flash tattoo mis à jour avec succès',
+               tattoo: data[0]
+           });
     } catch (error) {
         res.status(500).json({error: 'Erreur serveur lors de la mise à jour du flash tattoo.'});
     }
