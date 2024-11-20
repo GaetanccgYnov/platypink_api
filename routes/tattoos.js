@@ -64,7 +64,7 @@ router.post('/', verifyToken, verifyRole(['tattoo_artist']), async(req, res) => 
 });
 
 // GET - Récupérer tous les flash tattoos, ou filtrer par favoris de l'utilisateur
-router.get('/', verifyToken, async(req, res) => {
+router.get('/', async(req, res) => {
     const {
         user_id,
         available,
@@ -84,7 +84,7 @@ router.get('/', verifyToken, async(req, res) => {
     if (size) query = query.eq('size', size);
     if (color !== undefined) query = query.eq('color', color === 'true');
 
-    if (favorites === 'true') {
+    if (favorites === 'true' && req.user) {
         // Si le paramètre 'favorites' est 'true', on récupère uniquement les tatouages qui sont dans les favoris de l'utilisateur
         try {
             const {
@@ -121,7 +121,6 @@ router.get('/', verifyToken, async(req, res) => {
         res.status(500).json({error: 'Erreur serveur lors de la récupération des flash tattoos.'});
     }
 });
-
 
 router.get('/:id', async(req, res) => {
     const {id} = req.params;
