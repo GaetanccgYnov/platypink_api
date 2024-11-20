@@ -107,6 +107,29 @@ router.get('/', async(req, res) => {
     }
 });
 
+// Récupérer un tattoo_artist spécifique
+router.get('/:id', async(req, res) => {
+    const {id} = req.params;
+
+    try {
+        const {
+            data,
+            error
+        } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', id)
+            .eq('role', 'tattoo_artist')
+            .single();
+
+        if (error) return res.status(404).json({error: 'Tattoo artist non trouvé.'});
+
+        res.status(200).json(data);
+    } catch (error) {
+        res.status(500).json({error: 'Erreur serveur lors de la récupération du tattoo artist.'});
+    }
+});
+
 // Endpoint pour que les administrateurs mettent à jour les informations d'un utilisateur spécifique
 router.put('/:id', verifyToken, verifyRole(['admin']), async(req, res) => {
     const {
