@@ -118,6 +118,27 @@ router.get('/:id', async(req, res) => {
     }
 });
 
+// Check si un flash tattoo est dans mes favoris
+router.get('/:id/favorite', verifyToken, async(req, res) => {
+    const {id} = req.params;
+
+    try {
+        const {
+            data,
+            error
+        } = await supabase
+            .from('favorites')
+            .select('id')
+            .eq('flash_tattoo_id', id)
+            .eq('client_id', req.user.id)
+            .single();
+
+        res.status(200).json({checked: !!data});
+    } catch (error) {
+        res.status(500).json({error: 'Erreur serveur lors de la vérification du favori.'});
+    }
+});
+
 // UPDATE - Mettre à jour un flash tattoo
 router.put('/:id', verifyToken, verifyRole(['tattoo_artist']), async(req, res) => {
     const {id} = req.params;
