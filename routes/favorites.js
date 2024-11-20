@@ -68,7 +68,10 @@ router.get('/:id', verifyToken, verifyRole(['client']), async(req, res) => {
             return res.status(200).json({checked: false});
         }
 
-        res.status(200).json({checked: true});
+        res.status(200).json({
+            checked: true,
+            favorite: data
+        });
     } catch (err) {
         console.error('Erreur serveur lors de la vérification du favori :', err);
         res.status(500).json({error: 'Erreur serveur.'});
