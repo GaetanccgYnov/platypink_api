@@ -63,15 +63,16 @@ router.post('/', verifyToken, verifyRole(['tattoo_artist']), async(req, res) => 
     }
 });
 
-// READ - Récupérer tous les flash tattoos ou un par ID
-router.get('/', async(req, res) => {
+// GET - Récupérer tous les flash tattoos, ou filtrer par favoris de l'utilisateur
+router.get('/', verifyToken, async(req, res) => {
     const {
         user_id,
         available,
         min_price,
         max_price,
         size,
-        color
+        color,
+        favorites  // Nouveau paramètre pour filtrer par favoris
     } = req.query;
 
     let query = supabase.from('flashtattoos').select('*');
@@ -82,6 +83,30 @@ router.get('/', async(req, res) => {
     if (max_price) query = query.lte('price', parseFloat(max_price));
     if (size) query = query.eq('size', size);
     if (color !== undefined) query = query.eq('color', color === 'true');
+
+    if (favorites === 'true') {
+        // Si le paramètre 'favorites' est 'true', on récupère uniquement les tatouages qui sont dans les favoris de l'utilisateur
+        try {
+            const {
+                data: favoritesData,
+                error: favoritesError
+            } = await supabase
+                .from('favorites')
+                .select('flash_tattoo_id')
+                .eq('client_id', req.user.id); // Vérifier les favoris de l'utilisateur
+
+            if (favoritesError) return res.status(400).json({error: favoritesError.message});
+
+            // Extraire les IDs des tatouages favoris
+            const favoriteTattooIds = favoritesData.map(fav => fav.flash_tattoo_id);
+
+            // Filtrer les tatouages par les IDs des favoris
+            query = query.in('id', favoriteTattooIds);
+        } catch (err) {
+            console.error('Erreur lors de la récupération des favoris :', err);
+            return res.status(500).json({error: 'Erreur serveur lors de la récupération des favoris.'});
+        }
+    }
 
     try {
         const {
@@ -96,6 +121,7 @@ router.get('/', async(req, res) => {
         res.status(500).json({error: 'Erreur serveur lors de la récupération des flash tattoos.'});
     }
 });
+
 
 router.get('/:id', async(req, res) => {
     const {id} = req.params;
