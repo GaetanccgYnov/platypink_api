@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const {
     verifyToken,
-    verifyRole
+    verifyRole,
+    optionalVerifyToken
 } = require('../middlewares/authMiddleware');
 const {createClient} = require('@supabase/supabase-js');
 
@@ -63,8 +64,7 @@ router.post('/', verifyToken, verifyRole(['tattoo_artist']), async(req, res) => 
     }
 });
 
-// GET - Récupérer tous les flash tattoos, ou filtrer par favoris de l'utilisateur
-router.get('/', async(req, res) => {
+router.get('/', optionalVerifyToken, async(req, res) => {
     const {
         user_id,
         available,
@@ -72,11 +72,12 @@ router.get('/', async(req, res) => {
         max_price,
         size,
         color,
-        favorites  // Nouveau paramètre pour filtrer par favoris
+        favorites
     } = req.query;
 
     let query = supabase.from('flashtattoos').select('*');
 
+    // Appliquer les autres filtres
     if (user_id) query = query.eq('user_id', user_id);
     if (available) query = query.eq('available', available === 'true');
     if (min_price) query = query.gte('price', parseFloat(min_price));
@@ -84,8 +85,12 @@ router.get('/', async(req, res) => {
     if (size) query = query.eq('size', size);
     if (color !== undefined) query = query.eq('color', color === 'true');
 
-    if (favorites === 'true' && req.user) {
-        // Si le paramètre 'favorites' est 'true', on récupère uniquement les tatouages qui sont dans les favoris de l'utilisateur
+    // Gestion des favoris
+    if (favorites && favorites.toLowerCase() === 'true') {
+        if (!req.user || !req.user.id) {
+            return res.status(200).json([]);
+        }
+
         try {
             const {
                 data: favoritesData,
@@ -93,21 +98,25 @@ router.get('/', async(req, res) => {
             } = await supabase
                 .from('favorites')
                 .select('flash_tattoo_id')
-                .eq('client_id', req.user.id); // Vérifier les favoris de l'utilisateur
+                .eq('client_id', req.user.id);
 
             if (favoritesError) return res.status(400).json({error: favoritesError.message});
 
-            // Extraire les IDs des tatouages favoris
             const favoriteTattooIds = favoritesData.map(fav => fav.flash_tattoo_id);
 
-            // Filtrer les tatouages par les IDs des favoris
-            query = query.in('id', favoriteTattooIds);
+            if (favoriteTattooIds.length > 0) {
+                query = query.in('id', favoriteTattooIds);
+            } else {
+                // Aucun favori trouvé, retourner un tableau vide
+                return res.status(200).json([]);
+            }
         } catch (err) {
             console.error('Erreur lors de la récupération des favoris :', err);
             return res.status(500).json({error: 'Erreur serveur lors de la récupération des favoris.'});
         }
     }
 
+    // Récupération des tatouages après application des filtres
     try {
         const {
             data,
@@ -116,7 +125,6 @@ router.get('/', async(req, res) => {
 
         if (error) return res.status(400).json({error: error.message});
 
-        // Ajouter l'URL complète à l'image
         const tattoosWithFullImageUrl = data.map((tattoo) => ({
             ...tattoo,
             image_url: tattoo.image_url ? `http://localhost:5000/public${tattoo.image_url}` : null
