@@ -133,7 +133,10 @@ router.get('/:id/favorite', verifyToken, async(req, res) => {
             .eq('client_id', req.user.id)
             .single();
 
-        res.status(200).json({checked: !!data});
+        res.status(200).json({
+            checked: !!data,
+            favorite_id: data?.id
+        });
     } catch (error) {
         res.status(500).json({error: 'Erreur serveur lors de la vérification du favori.'});
     }
