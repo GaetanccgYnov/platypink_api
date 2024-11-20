@@ -49,7 +49,7 @@ router.get('/', verifyToken, verifyRole(['client']), async(req, res) => {
 });
 
 // GET - Vérifier si un favori appartient à l'utilisateur
-router.get('/:id/check', verifyToken, verifyRole(['client']), async(req, res) => {
+router.get('/:id', verifyToken, verifyRole(['client']), async(req, res) => {
     const {id} = req.params;
 
     try {
