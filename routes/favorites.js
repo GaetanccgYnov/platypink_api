@@ -65,7 +65,7 @@ router.get('/:id', verifyToken, verifyRole(['client']), async(req, res) => {
             .single();
 
         if (error || !data) {
-            return res.status(404).json({checked: false});
+            return res.status(200).json({checked: false});
         }
 
         res.status(200).json({checked: true});
