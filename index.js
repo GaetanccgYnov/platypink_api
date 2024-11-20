@@ -15,6 +15,7 @@ const tattooRoutes = require('./routes/tattoos');
 const favoriteRoutes = require('./routes/favorites');
 const reviewRoutes = require('./routes/reviews');
 const adminRoutes = require('./routes/admin');
+const path = require('path');
 
 // Middlewares
 app.use(cors());
@@ -47,6 +48,10 @@ app.use('/tattoos', tattooRoutes);
 app.use('/favorites', favoriteRoutes);
 app.use('/reviews', reviewRoutes);
 app.use('/admin', adminRoutes);
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+
+// Configurer le dossier 'public' pour servir des fichiers statiques
+app.use('/public', express.static(path.join(__dirname, 'public')));
 
 
 // Route de test

@@ -10,6 +10,22 @@ const {createClient} = require('@supabase/supabase-js');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
+const multer = require('multer');
+const path = require('path');
+
+// Configuration de Multer pour le stockage local
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, path.join(__dirname, '../public/uploads')); // Destination
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname)); // Nom unique
+    }
+});
+
+const upload = multer({storage});
+
 // GET - Récupérer la liste des utilisateurs
 router.get('/users', verifyToken, verifyRole(['admin']), async(req, res) => {
     const {
@@ -195,12 +211,11 @@ router.delete('/users/:id', verifyToken, verifyRole(['admin']), async(req, res) 
     }
 });
 
-// CREATE - Ajouter un flash tattoo (admin peut spécifier l'utilisateur propriétaire)
-router.post('/tattoos', verifyToken, verifyRole(['admin']), async(req, res) => {
+// CREATE - Ajouter un flash tattoo
+router.post('/tattoos', verifyToken, verifyRole(['admin']), upload.single('image'), async(req, res) => {
     const {
         title,
         description,
-        image_url,
         price,
         color,
         size,
@@ -219,6 +234,8 @@ router.post('/tattoos', verifyToken, verifyRole(['admin']), async(req, res) => {
     ].includes(size)) {
         return res.status(400).json({error: 'La taille doit être "petit", "moyen" ou "grand".'});
     }
+
+    const image_url = req.file ? `/uploads/${req.file.filename}` : null;
 
     try {
         const {
@@ -248,6 +265,62 @@ router.post('/tattoos', verifyToken, verifyRole(['admin']), async(req, res) => {
         });
     } catch (error) {
         res.status(500).json({error: 'Erreur serveur lors de la création du flash tattoo.'});
+    }
+});
+
+// UPDATE - Mettre à jour un flash tattoo
+router.put('/tattoos/:id', verifyToken, verifyRole(['admin']), upload.single('image'), async(req, res) => {
+    const {id} = req.params;
+    const {
+        title,
+        description,
+        price,
+        color,
+        size,
+        available
+    } = req.body;
+
+    if (size && ![
+        'petit',
+        'moyen',
+        'grand'
+    ].includes(size)) {
+        return res.status(400).json({error: 'La taille doit être "petit", "moyen" ou "grand".'});
+    }
+
+    const updates = {
+        title,
+        description,
+        price,
+        color,
+        size,
+        available
+    };
+    if (req.file) {
+        updates.image_url = `/uploads/${req.file.filename}`;
+    }
+
+    try {
+        const {
+            data,
+            error
+        } = await supabase
+            .from('flashtattoos')
+            .update(updates)
+            .eq('id', id)
+            .select();
+
+        if (error) return res.status(400).json({error: error.message});
+        if (!data || data.length === 0) {
+            return res.status(404).json({error: 'Flash tattoo non trouvé.'});
+        }
+
+        res.status(200).json({
+            message: 'Flash tattoo mis à jour avec succès',
+            tattoo: data[0]
+        });
+    } catch (error) {
+        res.status(500).json({error: 'Erreur serveur lors de la mise à jour du flash tattoo.'});
     }
 });
 
@@ -315,61 +388,6 @@ router.get('/tattoos/:id', verifyToken, verifyRole(['admin']), async(req, res) =
         res.status(200).json(data);
     } catch (error) {
         res.status(500).json({error: 'Erreur serveur lors de la récupération du flash tattoo.'});
-    }
-});
-
-// UPDATE - Mettre à jour un flash tattoo (admin peut modifier n'importe quel tattoo)
-router.put('/tattoos/:id', verifyToken, verifyRole(['admin']), async(req, res) => {
-    const {id} = req.params;
-    const {
-        title,
-        description,
-        image_url,
-        price,
-        color,
-        size,
-        available
-    } = req.body;
-
-    if (size && ![
-        'petit',
-        'moyen',
-        'grand'
-    ].includes(size)) {
-        return res.status(400).json({error: 'La taille doit être "petit", "moyen" ou "grand".'});
-    }
-
-    const updates = {};
-    if (title) updates.title = title;
-    if (description) updates.description = description;
-    if (image_url) updates.image_url = image_url;
-    if (price) updates.price = price;
-    if (color !== undefined) updates.color = color;
-    if (size) updates.size = size;
-    if (available !== undefined) updates.available = available;
-
-    try {
-        const {
-            data,
-            error
-        } = await supabase
-            .from('flashtattoos')
-            .update(updates)
-            .eq('id', id)
-            .select();
-
-        if (error) return res.status(400).json({error: error.message});
-
-        if (!data || data.length === 0) {
-            return res.status(404).json({error: 'Flash tattoo non trouvé.'});
-        }
-
-        res.status(200).json({
-            message: 'Flash tattoo mis à jour avec succès',
-            tattoo: data[0]
-        });
-    } catch (error) {
-        res.status(500).json({error: 'Erreur serveur lors de la mise à jour du flash tattoo.'});
     }
 });
 

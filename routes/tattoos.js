@@ -116,7 +116,13 @@ router.get('/', async(req, res) => {
 
         if (error) return res.status(400).json({error: error.message});
 
-        res.status(200).json(data);
+        // Ajouter l'URL complète à l'image
+        const tattoosWithFullImageUrl = data.map((tattoo) => ({
+            ...tattoo,
+            image_url: tattoo.image_url ? `http://localhost:5000/public${tattoo.image_url}` : null
+        }));
+
+        res.status(200).json(tattoosWithFullImageUrl);
     } catch (error) {
         res.status(500).json({error: 'Erreur serveur lors de la récupération des flash tattoos.'});
     }
@@ -136,6 +142,11 @@ router.get('/:id', async(req, res) => {
             .single();
 
         if (error) return res.status(404).json({error: 'Flash tattoo non trouvé.'});
+
+        // Ajouter l'URL complète de l'image
+        if (data) {
+            data.image_url = data.image_url ? `http://localhost:5000/public${data.image_url}` : null;
+        }
 
         res.status(200).json(data);
     } catch (error) {
