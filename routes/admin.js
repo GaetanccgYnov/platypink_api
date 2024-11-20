@@ -262,7 +262,12 @@ router.get('/tattoos', verifyToken, verifyRole(['admin']), async(req, res) => {
         color
     } = req.query;
 
-    let query = supabase.from('flashtattoos').select('*');
+    let query = supabase
+        .from('flashtattoos')
+        .select(`
+            *,
+            artist:users!flashtattoos_user_id_fkey(name)
+        `);
 
     if (user_id) query = query.eq('user_id', user_id);
     if (available) query = query.eq('available', available === 'true');
@@ -279,9 +284,16 @@ router.get('/tattoos', verifyToken, verifyRole(['admin']), async(req, res) => {
 
         if (error) return res.status(400).json({error: error.message});
 
-        res.status(200).json(data);
+        // Mapper les données pour inclure directement le nom de l'artiste dans la réponse
+        const result = data.map((tattoo) => ({
+            ...tattoo,
+            artist_name: tattoo.artist ? tattoo.artist.name : 'Non renseigné'
+        }));
+
+        res.status(200).json(result);
     } catch (error) {
-        res.status(500).json({error: 'Erreur serveur lors de la récupération des flash tattoos.'});
+        console.error('Erreur serveur lors de la récupération des flash tattoos :', error);
+        res.status(500).json({error: 'Erreur serveur.'});
     }
 });
 
@@ -390,15 +402,15 @@ router.get('/bookings', verifyToken, verifyRole(['admin']), async(req, res) => {
         status
     } = req.query;
 
-    // Construire la requête avec alias explicites
-    let query = supabase.from('bookings').select(`
-        *,
-        flash_tattoo:flashtattoos!bookings_flash_tattoo_id_fkey(title, image_url),
-        client:users!bookings_client_id_fkey(name, email),
-        tattoo_artist:users!bookings_tattoo_artist_id_fkey(name, email)
-    `);
+    let query = supabase
+        .from('bookings')
+        .select(`
+            *,
+            flash_tattoo:flashtattoos!bookings_flash_tattoo_id_fkey(title, image_url),
+            client:users!bookings_client_id_fkey(name),
+            tattoo_artist:users!bookings_tattoo_artist_id_fkey(name)
+        `);
 
-    // Appliquer les filtres
     if (client_id) query = query.eq('client_id', client_id);
     if (tattoo_artist_id) query = query.eq('tattoo_artist_id', tattoo_artist_id);
     if (status) query = query.eq('status', status);
@@ -411,7 +423,17 @@ router.get('/bookings', verifyToken, verifyRole(['admin']), async(req, res) => {
 
         if (error) return res.status(400).json({error: error.message});
 
-        res.status(200).json({bookings: data});
+        const bookings = data.map((booking) => ({
+            id: booking.id,
+            client_name: booking.client?.name || 'N/A',
+            artist_name: booking.tattoo_artist?.name || 'N/A',
+            tattoo_title: booking.flash_tattoo?.title || 'N/A',
+            date: booking.date,
+            time: booking.time,
+            status: booking.status
+        }));
+
+        res.status(200).json({bookings});
     } catch (err) {
         console.error('Erreur serveur lors de la récupération des réservations :', err);
         res.status(500).json({error: 'Erreur serveur.'});

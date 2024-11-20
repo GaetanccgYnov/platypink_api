@@ -48,6 +48,33 @@ router.get('/', verifyToken, verifyRole(['client']), async(req, res) => {
     }
 });
 
+// GET - Vérifier si un favori appartient à l'utilisateur
+router.get('/:id/check', verifyToken, verifyRole(['client']), async(req, res) => {
+    const {id} = req.params;
+
+    try {
+        // Vérification dans la base de données
+        const {
+            data,
+            error
+        } = await supabase
+            .from('favorites')
+            .select('id')
+            .eq('id', id)
+            .eq('client_id', req.user.id)
+            .single();
+
+        if (error || !data) {
+            return res.status(404).json({checked: false});
+        }
+
+        res.status(200).json({checked: true});
+    } catch (err) {
+        console.error('Erreur serveur lors de la vérification du favori :', err);
+        res.status(500).json({error: 'Erreur serveur.'});
+    }
+});
+
 // POST - Ajouter un élément aux favoris
 router.post('/', verifyToken, verifyRole(['client']), async(req, res) => {
     const {
