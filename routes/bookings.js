@@ -11,7 +11,11 @@ const bcrypt = require('bcryptjs');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
-router.post('/', verifyToken, verifyRole(['client']), async(req, res) => {
+router.post('/', verifyToken, verifyRole([
+    'client',
+    'tattoo_artist',
+    'admin'
+]), async(req, res) => {
     const {
         flash_tattoo_id,
         tattoo_artist_id,
@@ -51,7 +55,11 @@ router.post('/', verifyToken, verifyRole(['client']), async(req, res) => {
     }
 });
 
-router.get('/client', verifyToken, verifyRole(['client']), async(req, res) => {
+router.get('/client', verifyToken, verifyRole([
+    'client',
+    'tattoo_artist',
+    'admin'
+]), async(req, res) => {
     try {
 
 

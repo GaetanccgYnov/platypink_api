@@ -8,8 +8,12 @@ const {createClient} = require('@supabase/supabase-js');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
-// GET - Récupérer les favoris d'un client
-router.get('/', verifyToken, verifyRole(['client']), async(req, res) => {
+// GET - Récupérer les favoris de l'utilisateur
+router.get('/', verifyToken, verifyRole([
+    'client',
+    'tattoo_artist',
+    'admin'
+]), async(req, res) => {
     try {
         const {
             data: favorites,
@@ -49,7 +53,11 @@ router.get('/', verifyToken, verifyRole(['client']), async(req, res) => {
 });
 
 // GET - Vérifier si un favori appartient à l'utilisateur
-router.get('/:id', verifyToken, verifyRole(['client']), async(req, res) => {
+router.get('/:id', verifyToken, verifyRole([
+    'client',
+    'tattoo_artist',
+    'admin'
+]), async(req, res) => {
     const {id} = req.params;
 
     try {
@@ -79,7 +87,11 @@ router.get('/:id', verifyToken, verifyRole(['client']), async(req, res) => {
 });
 
 // POST - Ajouter un élément aux favoris
-router.post('/', verifyToken, verifyRole(['client']), async(req, res) => {
+router.post('/', verifyToken, verifyRole([
+    'client',
+    'tattoo_artist',
+    'admin'
+]), async(req, res) => {
     const {
         flash_tattoo_id,
         tattoo_artist_id
@@ -133,7 +145,11 @@ router.post('/', verifyToken, verifyRole(['client']), async(req, res) => {
 });
 
 // DELETE - Supprimer un favori
-router.delete('/:id', verifyToken, verifyRole(['client']), async(req, res) => {
+router.delete('/:id', verifyToken, verifyRole([
+    'client',
+    'tattoo_artist',
+    'admin'
+]), async(req, res) => {
     const {id} = req.params;
 
     try {
