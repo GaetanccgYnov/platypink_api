@@ -61,8 +61,6 @@ router.get('/client', verifyToken, verifyRole([
     'admin'
 ]), async(req, res) => {
     try {
-
-
         // Récupérer les réservations du client
         const {
             data: bookings,
@@ -82,17 +80,33 @@ router.get('/client', verifyToken, verifyRole([
             error: flashError
         } = await supabase
             .from('flashtattoos')
-            .select('id, title, image_url')
+            .select('id, title, image_url, user_id')
             .in('id', flashTattooIds);
 
         if (flashError) return res.status(400).json({error: flashError.message});
 
+        const artistIds = flashTattoos.map((tattoo) => tattoo.user_id);
+
+        // Récupérer les informations des artistes liés
+        const {
+            data: artists,
+            error: artistError
+        } = await supabase
+            .from('users')
+            .select('id, name, email')
+            .in('id', artistIds);
+
+        if (artistError) return res.status(400).json({error: artistError.message});
+
         // Associer les données
         const enrichedBookings = bookings.map((booking) => {
             const tattoo = flashTattoos.find((ft) => ft.id === booking.flash_tattoo_id);
+            const artist = tattoo ? artists.find((artist) => artist.id === tattoo.user_id) : null;
+
             return {
                 ...booking,
-                flash_tattoo: tattoo || null
+                flash_tattoo: tattoo || null,
+                artist: artist || null
             };
         });
 
